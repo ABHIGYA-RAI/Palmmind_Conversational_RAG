@@ -1,9 +1,6 @@
 import json
-
 from redis.asyncio import Redis
-
 from app.core.redis import redis_client
-
 MAX_MESSAGES = 20
 TTL_SECONDS = 86400
 

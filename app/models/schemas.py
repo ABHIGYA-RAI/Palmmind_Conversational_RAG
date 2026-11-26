@@ -1,7 +1,5 @@
 from datetime import date, time
-
 from pydantic import BaseModel, EmailStr, Field
-
 
 class ChatRequest(BaseModel):
     session_id: str = Field(min_length=1)

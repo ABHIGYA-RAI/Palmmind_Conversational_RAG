@@ -1,11 +1,7 @@
 import asyncio
-
 import httpx
-
 from app.core.config import settings
-
 MAX_RETRIES = 4
-
 
 class LLMClient:
     def __init__(self) -> None:

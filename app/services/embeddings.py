@@ -1,11 +1,8 @@
 import hashlib
 import re
 from typing import Protocol
-
 import numpy as np
-
 DIMS = 512
-
 
 class Embedder(Protocol):
     async def embed(self, texts: list[str]) -> list[list[float]]: ...

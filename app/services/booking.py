@@ -1,6 +1,5 @@
 import json
 from datetime import date
-
 from pydantic import ValidationError
 
 from app.core.redis import redis_client
@@ -10,6 +9,7 @@ from app.services.llm import llm_client
 
 FIELDS = ("name", "email", "date", "time")
 KEYWORDS = ("book", "interview", "schedule", "appointment")
+BOOKING_TTL_SECONDS = 3600
 
 
 def _key(session_id: str) -> str:
@@ -47,7 +47,7 @@ async def handle(session_id: str, message: str) -> str:
 
     missing = [f for f in FIELDS if f not in known]
     if missing:
-        await redis_client.set(key, json.dumps(known), ex=3600)
+        await redis_client.set(key, json.dumps(known), ex=BOOKING_TTL_SECONDS)
         return f"To book your interview, please provide your {', '.join(missing)}."
 
     try:

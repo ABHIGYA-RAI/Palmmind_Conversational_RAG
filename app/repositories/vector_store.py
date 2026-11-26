@@ -1,13 +1,10 @@
 import json
 import uuid
-
 import numpy as np
 from redis.asyncio import Redis
-
 from app.core.redis import redis_client
 
 INDEX_KEY = "vs:index"
-
 
 class VectorStore:
     def __init__(self, redis: Redis) -> None:

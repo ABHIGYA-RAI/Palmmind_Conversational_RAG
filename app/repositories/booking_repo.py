@@ -1,7 +1,5 @@
 from pathlib import Path
-
 import aiosqlite
-
 from app.core.config import settings
 from app.models.schemas import BookingDetails, BookingRecord
 

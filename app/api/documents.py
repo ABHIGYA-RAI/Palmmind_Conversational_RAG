@@ -1,8 +1,6 @@
 import io
-
 from fastapi import APIRouter, HTTPException, UploadFile
 from pypdf import PdfReader
-
 from app.models.schemas import IngestResponse
 from app.repositories.vector_store import vector_store
 from app.services.chunking import chunk_text
