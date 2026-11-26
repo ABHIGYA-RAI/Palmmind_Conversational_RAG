@@ -1,49 +1,107 @@
 # Conversational RAG API
 
-FastAPI backend with custom RAG, Redis chat memory, and LLM-based interview booking.
+A FastAPI backend that:
+- Answers questions about your uploaded documents (custom RAG, no FAISS, Chroma, or RetrievalQAChain)
+- Remembers each conversation (Redis chat memory, multi-turn)
+- Books interviews through chat (name, email, date, time) using an LLM, and stores them in SQLite
 
-## Stack
- .FastAPI
- . Redis (Chat memory)
- . SQLite (Bookings storing database) 
- . Groq LLM  
+## Requirements
+
+- Python 3.11+
+- Docker (for Redis)
+- A free Groq API key: https://console.groq.com/keys
 
 ## Setup
+
+**1. Create and activate a virtual environment**
+
 ```bash
 python -m venv .venv
+
+# Windows
 .venv\Scripts\activate
+
+# Mac/Linux
+source .venv/bin/activate
+```
+
+**2. Install dependencies**
+
+```bash
 pip install -r requirements.txt
+```
+
+**3. Start Redis**
+
+```bash
 docker run -d --name redis -p 6379:6379 redis:7
 ```
 
-Create `.env`:
+If the container already exists: `docker start redis`
+
+**4. Create `.env`** (copy `.env.example` and fill in your key)
+
 ```env
 REDIS_URL=redis://localhost:6379/0
-LLM_API_KEY=your_key
+LLM_API_KEY=your_groq_key_here
 LLM_BASE_URL=https://api.groq.com/openai/v1
 LLM_MODEL=openai/gpt-oss-120b
+EMBEDDING_MODEL=unused
 DATABASE_URL=sqlite+aiosqlite:///./data/bookings.db
 ```
 
-Run:
+No quotes and no spaces around `=`. If the model is rejected, set `LLM_MODEL` to another model your Groq key can use.
+
+**5. Run the server**
+
 ```bash
 uvicorn app.main:app --reload
 ```
-Docs: http://127.0.0.1:8000/docs
 
-## Endpoints
-| Method | Path | Purpose                                         |
-|---|---|-------------------------------------------------|
-| POST | /documents/ingest | Upload PDF/TXT/MD, chunking, embedding, storing |
-| POST | /chat | Multi-turn RAG chat and interview booking       |
-| GET | /bookings | List stored bookings                            |
-| GET | /health | Health and Redis check                          |
+Open http://127.0.0.1:8000/docs. Every endpoint can be tested from this page: click an endpoint, press **Try it out**, then **Execute**.
 
-## How it works
-1. **Ingestion:** text is chunked (800 chars, 150 overlap), embedded and stored in Redis.
-2. **Retrieval:** the query is embedded and the top 4 chunks are found by cosine similarity.
-3. **Memory:** the last 20 messages per `session_id` are kept in a Redis list (24h TTL).
-4. **Booking:** The LLM extracts booking details, stores incomplete information in Redis and saves completed bookings to SQLite once all required details are provided.
+## How to use
 
-## Note
-Embeddings use a local hashing embedder (`app/services/embeddings.py`) behind an `Embedder` protocol, so it can be swapped for a provider embedding API.
+Do these in order.
+
+### 1. Health check
+
+`GET /health` returns `{"status": "ok", "redis": "connected"}`.
+
+### 2. Upload a document
+
+`POST /documents/ingest`: choose a `.pdf`, `.txt`, or `.md` file.
+
+```json
+{"filename": "guide.pdf", "chunks": 3}
+```
+
+Upload at least one document before asking questions.
+
+### 3. Ask about the document
+
+`POST /chat`
+
+```json
+{"session_id": "doc1", "message": "Explain the uploaded document in simple terms. Give a summary and the key points."}
+```
+
+The response has `answer` and `sources` (the files used).
+
+### 4. Ask a follow-up (multi-turn)
+
+Use the same `session_id`:
+
+```json
+{"session_id": "doc1", "message": "Explain the second point in more detail"}
+```
+
+### 5. Book an interview
+
+All details in one message:
+
+```json
+{"session_id": "s1", "message": "Book an interview. Name: Abhigya Rai, email: abhigya@example.com, date: 2026-12-01, time: 10:00"}
+```
+
+Or step by step. The system asks for whatever is missing:
