@@ -1,9 +1,24 @@
 from datetime import date, time
-from pydantic import BaseModel, EmailStr, Field
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 
 class ChatRequest(BaseModel):
-    session_id: str = Field(min_length=1)
-    message: str = Field(min_length=1)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"session_id": "s1", "message": "What is this document about?"},
+                {
+                    "session_id": "s2",
+                    "message": "Book an interview. Name: Abhigya Rai, "
+                    "email: abhigya@example.com, date: 2026-12-01, time: 10:00",
+                },
+            ]
+        }
+    )
+
+    session_id: str = Field(min_length=1, description="Conversation ID. Reuse it for follow-ups.")
+    message: str = Field(min_length=1, description="The user's message.")
 
 
 class ChatResponse(BaseModel):
